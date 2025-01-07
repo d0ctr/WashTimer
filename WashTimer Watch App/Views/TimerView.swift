@@ -10,6 +10,8 @@ import SwiftData
 
 struct TimerView: View {
     @State var timer : TimerModel
+    
+    @State private var delay = TimeInterval()
 
     @State private var endTime = Date()
     @State private var now = Date()
@@ -26,23 +28,23 @@ struct TimerView: View {
                 } label: {
                     Text(timeInterval: timer.duration)
                         .font(.system(size: 24))
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
                 
             }
 
             Section("Delay") {
                 NavigationLink {
-                    TimeIntervalPicker(timeInterval: $timer.delay)
+                    TimeIntervalPicker(timeInterval: $delay)
                         .navigationTitle("Set Delay")
-                        .onChange(of: timer.delay) {
+                        .onChange(of: delay) {
                             now = Date()
-                            endTime = now.addingTimeInterval(timer.duration + timer.delay)
+                            endTime = now.addingTimeInterval(timer.duration + delay)
                         }
                 } label: {
                     HStack {
                         Image(systemName: "plus")
-                        Text(timeInterval: timer.delay)
+                        Text(timeInterval: delay)
                             .font(.system(size: 24))
                         Image(systemName: "plus")
                             .opacity(0)
@@ -59,7 +61,7 @@ struct TimerView: View {
                         .navigationTitle("Select End Time")
                         .onChange(of: endTime) {
                             now = Date()
-                            timer.delay = now.addingTimeInterval(timer.duration).distance(to: endTime)
+                            delay = now.addingTimeInterval(timer.duration).distance(to: endTime)
                         }
                 } label: {
                     HStack {
@@ -74,15 +76,18 @@ struct TimerView: View {
                     Text("End Time")
                     if Calendar.current.isDateInTomorrow(endTime) {
                         Text("Tomorrow")
-                            .padding(.horizontal)
+                            .padding(.horizontal, 8)
                             .background(Color.accentColor)
                             .clipShape(.capsule(style: .circular))
+                            .font(.caption)
+                            .foregroundStyle(.white)
                     }
                 }
             }
         }
-        .task {
-            endTime = now.addingTimeInterval(timer.duration + timer.delay)
+        .padding(.horizontal)
+        .onAppear() {
+            endTime = now.addingTimeInterval(timer.duration + delay)
         }
     }
 }

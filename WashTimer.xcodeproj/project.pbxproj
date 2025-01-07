@@ -45,6 +45,7 @@
 			membershipExceptions = (
 				Model/TimerModel.swift,
 				Model/TimersCollectionModel.swift,
+				Utils/DateHelper.swift,
 				Utils/Extension.swift,
 				Views/EndTimePicker.swift,
 				Views/TimeIntervalPicker.swift,
@@ -422,7 +423,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"WashTimer/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "WashTimer/Preview\\ Content";
 				DEVELOPMENT_TEAM = XLFMKCXBFR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -457,7 +458,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"WashTimer/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "WashTimer/Preview\\ Content";
 				DEVELOPMENT_TEAM = XLFMKCXBFR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

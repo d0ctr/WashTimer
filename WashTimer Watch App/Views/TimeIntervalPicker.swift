@@ -12,36 +12,52 @@ struct TimeIntervalPicker: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var timeInterval : TimeInterval
     
-    @State private var hours : Int = 0
-    @State private var minutes : Int = 0
+    @State private var date = Date()
+    private var selectedDate : Binding<Date> {
+        Binding {
+            return startOfToday.addingTimeInterval(self.timeInterval)
+        }
+        set: { newDate in
+            self.date = newDate
+        }
+    }
+    private let startOfToday = Calendar.current.startOfDay(for: .now)
+    
+    init(timeInterval: Binding<TimeInterval>) {
+        self._timeInterval = timeInterval
+    }
     
     var body: some View {
         VStack {
-            HStack {
-                Picker("Hours", selection: $hours) {
-                    ForEach(0..<24) { i in
-                        Text("\(i)").tag(i)
-                    }
-                }
-                
-                Picker("Minutes", selection: $minutes) {
-                    ForEach(0..<60) { i in
-                        Text("\(i)").tag(i)
-                    }
-                }
-            }
-            .pickerStyle(.wheel)
-            .padding()
+            DatePicker("time", selection: selectedDate, displayedComponents: [.hourAndMinute])
+                .labelsHidden()
+            #if os(iOS)
+                .datePickerStyle(.wheel)
+            #endif
+            
+            #if os(iOS)
+            Spacer()
+            #endif
             
             Button("Save") {
-                timeInterval = TimeInterval(hours * 3600 + minutes * 60)
+                timeInterval = startOfToday.distance(to: date)
                 dismiss()
             }
+            #if os(iOS)
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.roundedRectangle)
+            .padding()
+            .font(.title2)
+            #endif
+            
+            #if os(iOS)
+            Spacer()
+            #endif
         }
     }
 }
 
 #Preview {
-    @Previewable @State var timeInterval = TimeInterval()
+    @Previewable @State var timeInterval : TimeInterval = .hour + 2 * .minute
     TimeIntervalPicker(timeInterval: $timeInterval)
 }

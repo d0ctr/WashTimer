@@ -11,58 +11,134 @@ struct EndTimePicker: View {
     @Environment(\.dismiss) var dismiss
     @Binding var dateTime : Date
     
-    @State var start : Date?
+    var start : Date?
     
-    @State private var selectedTodayDateTime : Date = Date()
-    @State private var selectedTomorrowDateTime : Date = Calendar.current.startOfDay(for: .now.addingTimeInterval(24 * 60 * 60))
+    private var _start : Date {
+        return start ?? now
+    }
     
-    @State private var day = 0
+    @State private var todayDateTime : Date = Date()
+    @State private var tomorrowDateTime : Date = Date()
+    
+    private var selectedTodayDateTime : Binding<Date> {
+        Binding {
+            if !cal.isDateInTomorrow(_start) {
+                return _start
+            }
+            
+            if cal.isDateInTomorrow(dateTime) {
+                return todayPickerDateRange.lowerBound
+            }
+            
+            return _start > dateTime ? _start : dateTime
+        }
+        set: { newDate in
+            todayDateTime = newDate
+        }
+    }
+    private var selectedTomorrowDateTime : Binding<Date> {
+        Binding {
+            if cal.isDateInTomorrow(_start) {
+                return _start > dateTime ? _start : dateTime
+            }
+            if cal.isDateInTomorrow(dateTime) {
+                return dateTime
+            }
+            return tomorrowPickerDateRange.lowerBound
+        }
+        set: { newDate in
+            tomorrowDateTime = newDate
+        }
+    }
+    
+    @State private var day = Day.today
     @State private var now = Date()
     @State private var cal = Calendar.current
     
+    @State private var isTodayDisabled = false
+    
     var todayPickerDateRange : ClosedRange<Date> {
-        let start = self.start ?? now
-        let end = cal.startOfDay(for: start.addingTimeInterval(24 * 60 * 60))
-            .addingTimeInterval(-60)
+        let periodStart = _start
+        let periodEnd = cal.startOfDay(for: periodStart.addingTimeInterval(.day))
+            .addingTimeInterval(-.minute)
         
-        return start...end
+        return periodStart...periodEnd
     }
     
     var tomorrowPickerDateRange : ClosedRange<Date> {
-        let start = cal.startOfDay(for: now.addingTimeInterval(24 * 60 * 60))
-        let end = (self.start ?? now).addingTimeInterval(24 * 60 * 60).addingTimeInterval(-60)
+        let periodStart = cal.isDateInTomorrow(_start)
+            ? _start
+            : cal.startOfDay(for: _start.addingTimeInterval(.day))
+        let periodEnd = cal.isDateInTomorrow(_start)
+        ? todayPickerDateRange.upperBound
+        : _start.addingTimeInterval(.day - .minute)
         
-        return start...end
+        return periodStart...periodEnd
     }
     
     var body: some View {
         VStack {
-            Picker("Day", selection: $day) {
-                Text("Today").tag(0)
-                Text("Tomorrow").tag(1)
+            if !isTodayDisabled {
+                Picker("Day", selection: $day) {
+                    Text("Today").tag(Day.today)
+                    Text("Tomorrow").tag(Day.tomorrow)
+                }
+                #if os(watchOS)
+                .labelsHidden()
+                #endif
+                #if os(iOS)
+                .pickerStyle(.wheel)
+                #endif
             }
-            .labelsHidden()
     
             HStack {
-                if day == 0 {
+                switch day {
+                case .today:
                     DatePicker("End Time",
-                               selection: $selectedTodayDateTime,
+                               selection: selectedTodayDateTime,
                                in: todayPickerDateRange,
-                        displayedComponents: [.hourAndMinute])
-                } else {
+                               displayedComponents: [.hourAndMinute])
+                    .datePickerStyle(.wheel)
+                case .tomorrow:
                     DatePicker("End Time",
-                               selection: $selectedTomorrowDateTime,
+                               selection: selectedTomorrowDateTime,
                                in: tomorrowPickerDateRange,
                                displayedComponents: [.hourAndMinute])
+                    .datePickerStyle(.wheel)
                 }
                 
             }
             .labelsHidden()
+            
+            #if os(iOS)
+            Spacer()
+            #endif
+            
             Button {
-                dateTime = day == 0 ? selectedTodayDateTime : selectedTomorrowDateTime
+                dateTime = day == .today ? todayDateTime : tomorrowDateTime
                 dismiss()
             } label: {
                 Text("Save")
+            }
+            #if os(iOS)
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.roundedRectangle)
+            .padding()
+            .font(.title2)
+            #endif
+        }
+        .task {
+            if cal.isDateInTomorrow(_start) {
+                isTodayDisabled = true
+                day = .tomorrow
+            } else {
+                isTodayDisabled = false
+                if cal.isDateInTomorrow(dateTime) {
+                    day = .tomorrow
+                }
+                else {
+                    day = .today
+                }
             }
         }
     }
@@ -70,5 +146,5 @@ struct EndTimePicker: View {
 
 #Preview {
     @Previewable @State var dateTime = Date()
-    EndTimePicker(dateTime: $dateTime)
+    EndTimePicker(dateTime: $dateTime, start: dateTime.addingTimeInterval(.minute))
 }

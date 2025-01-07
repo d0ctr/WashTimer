@@ -15,3 +15,9 @@ extension Text {
         self.init(formatter.string(from: timeInterval)!)
     }
 }
+
+extension TimeInterval {
+    static let    day : TimeInterval = 24 * 60 * 60
+    static let   hour : TimeInterval = 60 * 60
+    static let minute : TimeInterval = 60
+}
