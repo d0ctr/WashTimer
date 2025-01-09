@@ -19,8 +19,8 @@ struct TimerView: View {
             _delay
         }
         set: { d in
-            _delay = d
-            _endTime = .now.addingTimeInterval(timer.duration + d)
+            _delay = max(d, 0)
+            _endTime = Date().addingTimeInterval(timer.duration + _delay)
         }
     }
     private var endTime : Binding<Date> {
@@ -28,8 +28,8 @@ struct TimerView: View {
             _endTime
         }
         set: { t in
-            _endTime = t
-            _delay = Date.now.addingTimeInterval(timer.duration).distance(to: t)
+            _endTime = max(t, Date())
+            _delay = Date().addingTimeInterval(timer.duration).distance(to: t)
         }
     }
     
@@ -67,7 +67,7 @@ struct TimerView: View {
 
             Section {
                 NavigationLink {
-                    EndTimePicker(endTime, start: .now.addingTimeInterval(timer.duration))
+                    EndTimePicker(endTime, start: Date().addingTimeInterval(timer.duration))
                         .navigationTitle("Select End Time")
                 } label: {
                     HStack {
@@ -93,7 +93,7 @@ struct TimerView: View {
         }
         .padding(.horizontal)
         .onAppear {
-            _endTime = .now.addingTimeInterval(timer.duration + delay.wrappedValue)
+            _endTime = Date().addingTimeInterval(timer.duration + _delay)
         }
     }
 }
