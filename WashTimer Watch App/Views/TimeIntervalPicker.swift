@@ -9,27 +9,22 @@ import SwiftUI
 
 
 struct TimeIntervalPicker: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var timeInterval : TimeInterval
-    
-    @State private var date = Date()
-    private var selectedDate : Binding<Date> {
-        Binding {
-            return startOfToday.addingTimeInterval(self.timeInterval)
-        }
-        set: { newDate in
-            self.date = newDate
-        }
-    }
     private let startOfToday = Calendar.current.startOfDay(for: .now)
     
+    @Environment(\.dismiss) private var dismiss
+    
+    @Binding var timeInterval : TimeInterval
+    
+    @State private var selectedDate : Date
+    
     init(timeInterval: Binding<TimeInterval>) {
+        self.selectedDate = startOfToday.addingTimeInterval(timeInterval.wrappedValue)
         self._timeInterval = timeInterval
     }
     
     var body: some View {
         VStack {
-            DatePicker("time", selection: selectedDate, displayedComponents: [.hourAndMinute])
+            DatePicker("time", selection: $selectedDate, displayedComponents: [.hourAndMinute])
                 .labelsHidden()
             #if os(iOS)
                 .datePickerStyle(.wheel)
@@ -40,7 +35,7 @@ struct TimeIntervalPicker: View {
             #endif
             
             Button("Save") {
-                timeInterval = startOfToday.distance(to: date)
+                timeInterval = startOfToday.distance(to: selectedDate)
                 dismiss()
             }
             #if os(iOS)

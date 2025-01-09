@@ -11,3 +11,4 @@ enum Day: Int, CaseIterable {
     case today = 0
     case tomorrow = 1
 }
+

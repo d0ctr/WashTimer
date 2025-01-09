@@ -11,69 +11,59 @@ struct EndTimePicker: View {
     @Environment(\.dismiss) var dismiss
     @Binding var dateTime : Date
     
-    var start : Date?
+    private var start : Date
     
-    private var _start : Date {
-        return start ?? now
-    }
+    @State private var todayDateTime : Date
+    @State private var tomorrowDateTime : Date
     
-    @State private var todayDateTime : Date = Date()
-    @State private var tomorrowDateTime : Date = Date()
+    @State private var day : Day = .today
+    @State private var isTodayDisabled : Bool
     
-    private var selectedTodayDateTime : Binding<Date> {
-        Binding {
-            if !cal.isDateInTomorrow(_start) {
-                return _start
-            }
-            
-            if cal.isDateInTomorrow(dateTime) {
-                return todayPickerDateRange.lowerBound
-            }
-            
-            return _start > dateTime ? _start : dateTime
-        }
-        set: { newDate in
-            todayDateTime = newDate
-        }
-    }
-    private var selectedTomorrowDateTime : Binding<Date> {
-        Binding {
-            if cal.isDateInTomorrow(_start) {
-                return _start > dateTime ? _start : dateTime
-            }
-            if cal.isDateInTomorrow(dateTime) {
-                return dateTime
-            }
-            return tomorrowPickerDateRange.lowerBound
-        }
-        set: { newDate in
-            tomorrowDateTime = newDate
-        }
-    }
+    private var todayPickerDateRange : ClosedRange<Date>
+    private var tomorrowPickerDateRange : ClosedRange<Date>
     
-    @State private var day = Day.today
-    @State private var now = Date()
-    @State private var cal = Calendar.current
-    
-    @State private var isTodayDisabled = false
-    
-    var todayPickerDateRange : ClosedRange<Date> {
-        let periodStart = _start
-        let periodEnd = cal.startOfDay(for: periodStart.addingTimeInterval(.day))
-            .addingTimeInterval(-.minute)
+    init(_ dateTime: Binding<Date>, start: Date = .now) {
+        self.start = start
+        _dateTime = dateTime
         
-        return periodStart...periodEnd
+        let cal = Calendar.current
+        
+        let endOfToday = cal.startOfDay(for: start.addingTimeInterval(.day)).addingTimeInterval(-.minute)
+        todayPickerDateRange = start...endOfToday
+        
+        let maxStart = max(start, dateTime.wrappedValue)
+        
+        if cal.isDateInTomorrow(start) {
+            isTodayDisabled = true
+            tomorrowPickerDateRange = start...endOfToday
+            todayDateTime = Date()
+            tomorrowDateTime = maxStart
+        } else {
+            isTodayDisabled = false
+            tomorrowPickerDateRange =
+                cal.startOfDay(for: start.addingTimeInterval(.day))
+                ...
+                start.addingTimeInterval(.day - .minute)
+            
+
+            if cal.isDateInTomorrow(dateTime.wrappedValue) {
+                todayDateTime = todayPickerDateRange.lowerBound
+                tomorrowDateTime = dateTime.wrappedValue
+            } else {
+                todayDateTime = maxStart
+                tomorrowDateTime = tomorrowPickerDateRange.lowerBound
+            }
+        }
     }
     
-    var tomorrowPickerDateRange : ClosedRange<Date> {
-        let periodStart = cal.isDateInTomorrow(_start)
-            ? _start
-            : cal.startOfDay(for: _start.addingTimeInterval(.day))
-        let periodEnd = cal.isDateInTomorrow(_start)
-        ? todayPickerDateRange.upperBound
-        : _start.addingTimeInterval(.day - .minute)
-        
-        return periodStart...periodEnd
+    init(_ dateTime: Binding<Date>, todayPickerDateRange: ClosedRange<Date>?, tomorrowPickerDateRange: ClosedRange<Date>?) {
+        self.init(dateTime)
+        if todayPickerDateRange != nil {
+            self.todayPickerDateRange = todayPickerDateRange!
+        }
+        if tomorrowPickerDateRange != nil {
+            self.tomorrowPickerDateRange = tomorrowPickerDateRange!
+        }
     }
     
     var body: some View {
@@ -95,13 +85,13 @@ struct EndTimePicker: View {
                 switch day {
                 case .today:
                     DatePicker("End Time",
-                               selection: selectedTodayDateTime,
+                               selection: $todayDateTime,
                                in: todayPickerDateRange,
                                displayedComponents: [.hourAndMinute])
                     .datePickerStyle(.wheel)
                 case .tomorrow:
                     DatePicker("End Time",
-                               selection: selectedTomorrowDateTime,
+                               selection: $tomorrowDateTime,
                                in: tomorrowPickerDateRange,
                                displayedComponents: [.hourAndMinute])
                     .datePickerStyle(.wheel)
@@ -127,16 +117,16 @@ struct EndTimePicker: View {
             .font(.title2)
             #endif
         }
-        .task {
-            if cal.isDateInTomorrow(_start) {
+        .onAppear {
+            let cal = Calendar.current
+            if cal.isDateInTomorrow(start) {
                 isTodayDisabled = true
                 day = .tomorrow
             } else {
                 isTodayDisabled = false
                 if cal.isDateInTomorrow(dateTime) {
                     day = .tomorrow
-                }
-                else {
+                } else {
                     day = .today
                 }
             }
@@ -146,5 +136,5 @@ struct EndTimePicker: View {
 
 #Preview {
     @Previewable @State var dateTime = Date()
-    EndTimePicker(dateTime: $dateTime, start: dateTime.addingTimeInterval(.minute))
+    EndTimePicker($dateTime, start: dateTime.addingTimeInterval(.minute))
 }
